@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Detector de Phishing Bancario
+    </title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+
+            font-family: Arial, sans-serif;
+
+            background: #f2f4f7;
+
+            margin: 0;
+
+            padding: 0;
+
+        }
+
+
+        .contenedor {
+
+            width: 90%;
+
+            max-width: 750px;
+
+            margin: 60px auto;
+
+            background: white;
+
+            padding: 40px;
+
+            border-radius: 15px;
+
+            box-shadow:
+                0 4px 15px rgba(0, 0, 0, 0.10);
+
+            text-align: center;
+
+        }
+
+
+        h1 {
+
+            margin-bottom: 10px;
+
+        }
+
+
+        .descripcion {
+
+            color: #555;
+
+            margin-bottom: 30px;
+
+            line-height: 1.5;
+
+        }
+
+
+        input {
+
+            width: 90%;
+
+            padding: 15px;
+
+            border: 1px solid #ccc;
+
+            border-radius: 8px;
+
+            font-size: 16px;
+
+        }
+
+
+        button {
+
+            margin-top: 20px;
+
+            padding: 14px 30px;
+
+            border: none;
+
+            border-radius: 8px;
+
+            background-color: #1f6feb;
+
+            color: white;
+
+            font-size: 16px;
+
+            cursor: pointer;
+
+        }
+
+
+        button:hover {
+
+            background-color: #1557b0;
+
+        }
+
+
+        .aviso {
+
+            margin-top: 30px;
+
+            padding: 15px;
+
+            background-color: #fff3cd;
+
+            border-radius: 8px;
+
+            color: #664d03;
+
+        }
+
+
+        .resultado {
+
+            margin-top: 30px;
+
+            padding: 25px;
+
+            border-radius: 10px;
+
+            background-color: #f5f5f5;
+
+            text-align: left;
+
+        }
+
+
+        .resultado h2 {
+
+            text-align: center;
+
+        }
+
+
+        .riesgo {
+
+            text-align: center;
+
+            font-size: 22px;
+
+            font-weight: bold;
+
+            margin: 20px 0;
+
+        }
+
+
+        .url {
+
+            word-break: break-all;
+
+            background: white;
+
+            padding: 12px;
+
+            border-radius: 6px;
+
+        }
+
+
+        .resultado ul {
+
+            padding-left: 25px;
+
+        }
+
+
+        .resultado li {
+
+            margin: 10px 0;
+
+        }
+
+
+        .recomendacion {
+
+            margin-top: 20px;
+
+            padding: 15px;
+
+            background-color: #e8f4fd;
+
+            border-radius: 8px;
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="contenedor">
+
+
+    <h1>
+        🛡️ Detector de Phishing Bancario
+    </h1>
+
+
+    <p class="descripcion">
+
+        Analiza un enlace antes de acceder a él
+        y determina si presenta características
+        asociadas al phishing.
+
+    </p>
+
+
+    <form method="POST">
+
+
+        <input
+            type="text"
+            name="url"
+            placeholder="Ingrese aquí el enlace..."
+            value="{{ url_analizada }}"
+            required
+        >
+
+
+        <br>
+
+
+        <button type="submit">
+
+            🔎 Analizar enlace
+
+        </button>
+
+
+    </form>
+
+
+    <div class="aviso">
+
+        ⚠️ No introduzca contraseñas ni
+        información bancaria.
+
+        <br>
+
+        Este sistema es una herramienta
+        de análisis y simulación.
+
+    </div>
+
+
+    {% if resultado %}
+
+
+    <div class="resultado">
+
+
+        <h2>
+
+            {{ resultado }}
+
+        </h2>
+
+
+        <div class="riesgo">
+
+            Nivel de riesgo:
+            {{ riesgo }}%
+
+        </div>
+
+
+        <p>
+
+            <strong>
+                URL analizada:
+            </strong>
+
+        </p>
+
+
+        <div class="url">
+
+            {{ url_analizada }}
+
+        </div>
+
+
+        <h3>
+
+            🔍 Características detectadas
+
+        </h3>
+
+
+        <ul>
+
+            {% for detalle in detalles %}
+
+                <li>
+
+                    {{ detalle }}
+
+                </li>
+
+            {% endfor %}
+
+        </ul>
+
+
+        {% if riesgo >= 60 %}
+
+        <div class="recomendacion">
+
+            🚨 <strong>Recomendación:</strong>
+
+            No continúe con el enlace
+            ni introduzca información personal,
+            contraseñas o datos bancarios.
+
+        </div>
+
+
+        {% elif riesgo >= 30 %}
+
+        <div class="recomendacion">
+
+            ⚠️ <strong>Precaución:</strong>
+
+            El enlace presenta algunas
+            características que requieren
+            atención antes de acceder.
+
+        </div>
+
+
+        {% else %}
+
+        <div class="recomendacion">
+
+            ✅ <strong>Resultado:</strong>
+
+            No se detectaron suficientes
+            características sospechosas.
+
+            Esto no garantiza que el sitio
+            sea completamente seguro.
+
+        </div>
+
+        {% endif %}
+
+
+    </div>
+
+
+    {% endif %}
+
+
+</div>
+
+
+</body>
+
+</html>
