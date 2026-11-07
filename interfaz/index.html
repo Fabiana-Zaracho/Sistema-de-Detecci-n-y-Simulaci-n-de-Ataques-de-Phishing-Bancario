@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PhishGuard · Analizador de URLs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EDF0F3; --surface:#FFFFFF; --ink:#1B2430; --muted:#5C6978; --line:#CBD3DC;
+  --brand:#243B6B; --ok:#0F7B6C; --warn:#B7791F; --bad:#C02D3A;
+  --ok-bg:#E3F2EF; --warn-bg:#FBF1DC; --bad-bg:#FADFE1;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#141A22; --surface:#1D2530; --ink:#E7ECF2; --muted:#9AA7B6; --line:#334052;
+    --brand:#8FA9E6; --ok:#3CC1AC; --warn:#E0B055; --bad:#EE6B77;
+    --ok-bg:#16332E; --warn-bg:#3A2F17; --bad-bg:#3D1C21;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html{background:var(--paper)}
+body{margin:0;font:16px/1.55 "Public Sans",system-ui,sans-serif;color:var(--ink);background:var(--paper)}
+main{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+h1,h2{font-family:"Bricolage Grotesque","Public Sans",sans-serif;margin:0;line-height:1.1}
+h1{font-size:2.2rem;font-weight:700;letter-spacing:-.02em}
+h2{font-size:1.05rem;font-weight:700;margin-bottom:12px}
+.sub{color:var(--muted);margin:8px 0 28px;max-width:56ch}
+.status{display:inline-flex;align-items:center;gap:8px;font-size:.85rem;color:var(--muted);margin-bottom:14px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.dot.on{background:var(--ok)} .dot.off{background:var(--bad)} .dot.mid{background:var(--warn)}
+form.analyze{display:flex;gap:10px}
+input[type=text],input[type=password]{
+  width:100%;font:inherit;padding:13px 14px;border:1.5px solid var(--line);border-radius:8px;
+  background:var(--surface);color:var(--ink)}
+input:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+button{font:inherit;font-weight:600;cursor:pointer;border-radius:8px;border:0;padding:13px 22px;
+  background:var(--brand);color:#fff}
+@media (prefers-color-scheme:dark){button.primary{color:#0E1522}}
+button:disabled{opacity:.6;cursor:progress}
+button.link{background:none;color:var(--muted);padding:0;font-weight:500;text-decoration:underline;font-size:.85rem}
+details{margin-top:14px;font-size:.92rem}
+summary{cursor:pointer;color:var(--muted)}
+.cfg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.cfg label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:4px}
+.msg{margin-top:20px;padding:14px 16px;border-radius:8px;background:var(--bad-bg);color:var(--ink);border-left:4px solid var(--bad)}
+.card{margin-top:28px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:26px}
+.verdict{display:inline-block;padding:3px 12px;border-radius:99px;font-size:.85rem;font-weight:600;margin-bottom:10px}
+.v-bajo{background:var(--ok-bg);color:var(--ok)} .v-medio{background:var(--warn-bg);color:var(--warn)} .v-alto{background:var(--bad-bg);color:var(--bad)}
+.card h2.dom{font-size:1.6rem;overflow-wrap:anywhere;margin-bottom:4px}
+.url{color:var(--muted);font-size:.88rem;overflow-wrap:anywhere}
+/* gauge */
+.gauge-wrap{margin:34px 0 8px}
+.gauge{position:relative;height:16px;border-radius:8px;display:flex;overflow:visible}
+.gauge i{display:block;height:100%}
+.gauge i:first-child{border-radius:8px 0 0 8px} .gauge i:last-child{border-radius:0 8px 8px 0}
+.z-ok{background:var(--ok)} .z-warn{background:var(--warn)} .z-bad{background:var(--bad)}
+.mark{position:absolute;top:-7px;width:4px;height:30px;margin-left:-2px;border-radius:2px;background:var(--ink);box-shadow:0 0 0 2px var(--surface)}
+.mark.model{top:-3px;height:22px;width:3px;background:var(--surface);box-shadow:0 0 0 2px var(--ink);}
+.ticks{position:relative;height:22px;margin-top:12px;font-size:.78rem;color:var(--muted)}
+.ticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.82rem;color:var(--muted);margin-top:4px}
+.legend b{display:inline-block;width:4px;height:14px;background:var(--ink);vertical-align:-2px;margin-right:6px;border-radius:2px}
+.legend b.m{width:3px;background:var(--surface);box-shadow:0 0 0 1.5px var(--ink)}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:26px 0;padding:16px 0;border-block:1px solid var(--line)}
+.facts dt{font-size:.8rem;color:var(--muted)} .facts dd{margin:2px 0 0;font-weight:600}
+.sec{margin-top:24px}
+.sec p{margin:0}
+ul.rules{margin:0;padding-left:20px} ul.rules li{margin-bottom:4px}
+.sig{display:grid;grid-template-columns:minmax(120px,1fr) 2fr 52px;gap:10px;align-items:center;font-size:.9rem;margin-bottom:8px}
+.sig .n{overflow-wrap:anywhere}
+.sig small{display:block;color:var(--muted);font-size:.78rem}
+.bar{position:relative;height:10px;background:var(--paper);border-radius:5px}
+.bar::after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--line)}
+.bar span{position:absolute;top:0;bottom:0;border-radius:5px}
+.bar .pos{left:50%;background:var(--bad)} .bar .neg{right:50%;background:var(--ok)}
+.sig .w{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.hint{font-size:.8rem;color:var(--muted);margin-top:6px}
+.hist{margin-top:44px}
+.hist ul{list-style:none;margin:0;padding:0}
+.hist li button{width:100%;display:flex;justify-content:space-between;gap:12px;text-align:left;background:none;color:var(--ink);
+  padding:10px 4px;border-radius:0;border-bottom:1px solid var(--line);font-weight:500}
+.hist li button:hover{background:var(--surface)}
+.hist .tag{font-size:.8rem;font-weight:600;white-space:nowrap}
+.t-bajo{color:var(--ok)} .t-medio{color:var(--warn)} .t-alto{color:var(--bad)}
+@media (max-width:560px){
+  form.analyze{flex-direction:column} .cfg{grid-template-columns:1fr} .facts{grid-template-columns:1fr 1fr}
+  .sig{grid-template-columns:1fr 52px} .sig .bar{grid-column:1/-1;order:3}
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>PhishGuard</h1>
+  <p class="sub">Pega una URL sospechosa y revisa si es phishing, con el motivo de cada decisión.</p>
+
+  <div class="status" id="status"><span class="dot"></span><span>Comprobando conexión…</span></div>
+
+  <form class="analyze" id="form">
+    <input type="text" id="url" placeholder="http://ejemplo-banco-login.com/verificar" autocomplete="off" spellcheck="false" aria-label="URL a analizar" required minlength="4">
+    <button class="primary" id="go" type="submit">Analizar URL</button>
+  </form>
+
+  <details id="cfg">
+    <summary>Conexión con la API</summary>
+    <div class="cfg">
+      <div><label for="base">Dirección de la API</label><input type="text" id="base" value="http://127.0.0.1:8000"></div>
+      <div><label for="key">Clave (X-API-Key)</label><input type="password" id="key" autocomplete="off" placeholder="PHISHGUARD_API_KEY"></div>
+    </div>
+  </details>
+
+  <div id="out" aria-live="polite"></div>
+  <section class="hist" id="hist" hidden>
+    <h2>Análisis recientes</h2>
+    <ul id="histList"></ul>
+    <button class="link" id="clear" type="button">Borrar historial</button>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v === null ? d : v; } catch(e){ return d; } },
+  set(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+};
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pct = p => Math.round(p * 1000) / 10;
+const NIVEL = { bajo:'Sin señales de phishing', medio:'URL sospechosa', alto:'Probable phishing' };
+
+$('base').value = store.get('pg_base', $('base').value);
+$('key').value  = store.get('pg_key', '');
+if (!$('key').value) $('cfg').open = true;
+const base = () => $('base').value.trim().replace(/\/+$/, '');
+
+function setStatus(kind, text){
+  $('status').innerHTML = `<span class="dot ${kind}"></span><span>${esc(text)}</span>`;
+}
+async function checkHealth(){
+  try {
+    const r = await fetch(base() + '/health');
+    const d = await r.json();
+    d.modelo_cargado ? setStatus('on', 'API conectada, modelo cargado')
+                     : setStatus('mid', 'API conectada, pero el modelo no está cargado (revisa la carpeta models/)');
+  } catch(e){ setStatus('off', 'No se pudo conectar con la API. ¿Está corriendo uvicorn?'); }
+}
+['base','key'].forEach(id => $(id).addEventListener('change', () => {
+  store.set('pg_base', $('base').value); store.set('pg_key', $('key').value); checkHealth();
+}));
+
+function showError(text){ $('out').innerHTML = `<div class="msg" role="alert">${esc(text)}</div>`; }
+
+function gauge(d){
+  const u = Math.min(Math.max(d.umbral_usado, 0), 1) * 100;
+  const hi = Math.max(70, u);
+  const zones = `<i class="z-ok" style="width:${u}%"></i>` +
+    (hi > u ? `<i class="z-warn" style="width:${hi - u}%"></i>` : '') +
+    `<i class="z-bad" style="flex:1"></i>`;
+  const fin = pct(d.probabilidad_phishing), mod = pct(d.probabilidad_modelo);
+  return `<div class="gauge-wrap">
+    <div class="gauge" role="img" aria-label="Riesgo final ${fin}%, umbral ${pct(d.umbral_usado)}%">${zones}
+      <div class="mark model" style="left:${mod}%" title="Solo modelo: ${mod}%"></div>
+      <div class="mark" style="left:${fin}%" title="Riesgo final: ${fin}%"></div>
+    </div>
+    <div class="ticks"><span style="left:0;transform:none">0%</span>
+      <span style="left:${u}%">umbral ${pct(d.umbral_usado)}%</span>
+      <span style="left:100%;transform:translateX(-100%)">100%</span></div>
+    <div class="legend"><span><b></b>Riesgo final ${fin}%</span><span><b class="m"></b>Solo el modelo ${mod}%</span></div>
+  </div>`;
+}
+
+function signals(list){
+  if (!list.length) return '';
+  const max = Math.max(...list.map(s => Math.abs(s.peso_en_decision))) || 1;
+  const rows = list.map(s => {
+    const w = s.peso_en_decision, len = Math.abs(w) / max * 50;
+    const bar = w >= 0 ? `<span class="pos" style="width:${len}%"></span>` : `<span class="neg" style="width:${len}%"></span>`;
+    return `<div class="sig"><div class="n">${esc(s.nombre.replace(/_/g,' '))}<small>valor ${esc(+s.valor.toFixed(3))}</small></div>
+      <div class="bar" title="${w >= 0 ? 'Empuja hacia phishing' : 'Empuja hacia legítimo'}">${bar}</div>
+      <div class="w">${w > 0 ? '+' : ''}${w.toFixed(2)}</div></div>`;
+  }).join('');
+  return `<div class="sec"><h2>Qué pesó en la decisión del modelo</h2>${rows}
+    <p class="hint">Las barras rojas empujan hacia phishing; las verdes, hacia sitio legítimo.</p></div>`;
+}
+
+function render(d){
+  const ssl = d.ssl_valido === null ? 'Sin datos' : d.ssl_valido ? 'Válido' : 'No válido';
+  const age = d.antiguedad_dominio_dias === null ? 'Sin datos' : `${d.antiguedad_dominio_dias} días`;
+  const rules = d.reglas_activadas.length
+    ? `<div class="sec"><h2>Reglas activadas</h2><ul class="rules">${d.reglas_activadas.map(r => `<li>${esc(r)}</li>`).join('')}</ul></div>` : '';
+  $('out').innerHTML = `<article class="card">
+    <span class="verdict v-${esc(d.nivel_riesgo)}">${esc(NIVEL[d.nivel_riesgo] || d.nivel_riesgo)}</span>
+    <h2 class="dom">${esc(d.dominio)}</h2>
+    <div class="url">${esc(d.url)}</div>
+    ${gauge(d)}
+    <dl class="facts">
+      <div><dt>Nivel de riesgo</dt><dd>${esc(d.nivel_riesgo)}</dd></div>
+      <div><dt>Antigüedad del dominio</dt><dd>${esc(age)}</dd></div>
+      <div><dt>Certificado SSL</dt><dd>${esc(ssl)}</dd></div>
+    </dl>
+    <div class="sec"><p>${esc(d.explicacion)}</p></div>
+    ${rules}${signals(d.senales_principales)}
+  </article>`;
+}
+
+async function analyze(url){
+  $('go').disabled = true; $('go').textContent = 'Analizando…';
+  $('out').innerHTML = '';
+  try {
+    const r = await fetch(base() + '/analizar', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-API-Key':$('key').value.trim()},
+      body: JSON.stringify({url})
+    });
+    let body = null; try { body = await r.json(); } catch(e){}
+    if (!r.ok){
+      const det = body && body.detail;
+      const msgs = {
+        401:'La clave de API es incorrecta o falta. Escríbela en «Conexión con la API».',
+        429:'Hiciste demasiados análisis seguidos. Espera un minuto e inténtalo de nuevo.',
+        503:'El servidor no tiene el modelo cargado. Copia los archivos .pkl en la carpeta models/.'
+      };
+      let t = msgs[r.status] || (typeof det === 'string' ? det : 'La API respondió con un error (' + r.status + ').');
+      if (r.status === 422) t = 'La URL no es válida. Debe tener entre 4 y 2048 caracteres.';
+      return showError(t);
+    }
+    render(body); saveHistory(body);
+  } catch(e){
+    showError('No se pudo conectar con la API en ' + base() + '. Comprueba que uvicorn esté corriendo y que la dirección sea correcta.');
+  } finally { $('go').disabled = false; $('go').textContent = 'Analizar URL'; }
+}
+
+function history(){ try { return JSON.parse(store.get('pg_hist','[]')); } catch(e){ return []; } }
+function saveHistory(d){
+  const h = history().filter(x => x.url !== d.url);
+  h.unshift({url:d.url, dominio:d.dominio, nivel:d.nivel_riesgo, p:d.probabilidad_phishing});
+  store.set('pg_hist', JSON.stringify(h.slice(0, 8))); drawHistory();
+}
+function drawHistory(){
+  const h = history(); $('hist').hidden = !h.length;
+  $('histList').innerHTML = h.map((x,i) => `<li><button type="button" data-i="${i}"><span>${esc(x.dominio)}</span>
+    <span class="tag t-${esc(x.nivel)}">${esc(NIVEL[x.nivel] || x.nivel)} · ${pct(x.p)}%</span></button></li>`).join('');
+}
+$('histList').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const x = history()[+b.dataset.i]; if (x){ $('url').value = x.url; analyze(x.url); }
+});
+$('clear').addEventListener('click', () => { store.set('pg_hist','[]'); drawHistory(); });
+
+$('form').addEventListener('submit', e => {
+  e.preventDefault();
+  store.set('pg_base', $('base').value); store.set('pg_key', $('key').value);
+  analyze($('url').value.trim());
+});
+
+drawHistory(); checkHealth();
+</script>
+</body>
+</html>
