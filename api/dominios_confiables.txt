@@ -1,0 +1,30 @@
+# Dominios de confianza: NO pasan por el modelo y siempre dan riesgo bajo.
+# Un dominio por línea, solo el dominio principal (sin www ni https). Las líneas con # son comentarios.
+#
+# CUIDADO: agregá solo dominios que verificaste vos mismo (por ejemplo, el sitio oficial de un banco
+# escrito a mano desde su publicidad o su app). NUNCA agregues servicios donde cualquiera puede
+# publicar páginas (blogspot.com, github.io, wixsite.com, sites.google.com, etc.): un atacante
+# podría alojar su phishing ahí y quedaría marcado como seguro.
+
+google.com
+youtube.com
+microsoft.com
+apple.com
+facebook.com
+instagram.com
+whatsapp.com
+wikipedia.org
+amazon.com
+netflix.com
+paypal.com
+# --- Bancos de Paraguay: agregá acá los dominios oficiales, verificados a mano ---
+itau.com.py
+familiar.com.py
+bancontinental.com.py
+bancognb.com.py
+bnf.gov.py
+bancoatlas.com.py
+interfisa.com.py
+zbanco.com.py
+bancobasa.com.py
+solar.com.py
